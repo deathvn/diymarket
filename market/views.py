@@ -128,7 +128,7 @@ class MatchbyUser(LoginRequiredMixin, generic.ListView):
 # Order create, delete
 class OrderCreate(LoginRequiredMixin, CreateView):
     model = Order
-    fields = ['type', 'location', 'item_id', 'price', 'amount']
+    fields = ['type', 'location', 'item_id', 'quality', 'price', 'amount']
 
     def form_valid(self, form):
         form.instance.username = self.request.user
