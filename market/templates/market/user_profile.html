@@ -1,0 +1,159 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+<h1>{{ username }}</h1>
+<h2>Lệnh đã khớp</h2>
+<ul>
+  <li><a href="{% url 'matching-list-view' 'sell' %}">Lệnh bán đã khớp</a></li>
+  <li><a href="{% url 'matching-list-view' 'buy' %}">Lệnh mua đã khớp</a></li>
+</ul>
+</br>
+
+{% if order_list %}
+<div id="ListOfOrder" v-if="isLoaded">
+  <h2>Lệnh bán còn chờ</h2>
+  <table class="table-of-items" style="width: 100%">
+    <colgroup is="table-colgroup"></colgroup>
+    <tbody>
+      <tr is="table-title"></tr>
+      {% for order in order_list %}   
+      <tr is="row-item"
+        gettype="s"
+        id="{{ order.id }}"
+        rowid="order-{{ forloop.counter0 }}"
+        type="{{ order.type }}"
+        location="{{ order.location }}"
+        item_id="{{ order.item_id }}"
+        price="{{ order.price }}"
+        amount="{{ order.amount }}"
+      ></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <br/>
+  <h2>Lệnh mua còn chờ</h2>
+  <table class="table-of-items" style="width: 100%">
+    <colgroup is="table-colgroup"></colgroup>
+    <tbody>
+      <tr is="table-title"></tr>
+      {% for order in order_list %}   
+      <tr is="row-item"
+        gettype="b"
+        id="{{ order.id }}"
+        rowid="order-{{ forloop.counter0 }}"
+        type="{{ order.type }}"
+        location="{{ order.location }}"
+        item_id="{{ order.item_id }}"
+        price="{{ order.price }}"
+        amount="{{ order.amount }}"
+      ></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script type="text/javascript">
+function itemIdToName(item_id) {
+  return data.AlbionItems.find(el => el.UniqueName === item_id)['LocalizedNames'];
+}
+
+const TYPE_CHOICE = {
+  'b': 'Buy',
+  's': 'Sell'
+};
+const LOCATION_CHOICE = {
+  '0': 'Thetford',
+  '1': 'Martlock',
+  '2': 'Bridgewatch',
+  '3': 'Lymhurst',
+  '4': 'Fort Sterling',
+  '5': 'Caerleon'
+};
+
+Vue.component('table-colgroup', {
+  template: `
+    <colgroup>
+      <col span="1" style="width: 15%;">
+      <col span="1" style="width: 15%;">
+      <col span="1" style="width: 40%;">
+      <col span="1" style="width: 15%;">
+      <col span="1" style="width: 10%;">
+      <col span="1" style="width: 5%;">
+    </colgroup>
+  `
+});
+
+Vue.component('table-title', {
+  template: `
+    <tr>
+      <th>Vị trí</th>
+      <th>Item</th>
+      <th>Tên</th>
+      <th>Giá</th>
+      <th>Số lượng</th>
+    </tr>
+  `
+});
+
+Vue.component('row-item', {
+  delimiters: ['[[', ']]'],
+  props: ["gettype", "rowid", "type", "location", "item_id", "price", "amount", "id"],
+  data: function () {
+    return {
+      order_type: TYPE_CHOICE[this.type],
+      order_location: LOCATION_CHOICE[this.location],
+      item_img_src: `${data.imgAPI}${this.item_id}`,
+      item_name: itemIdToName(this.item_id),
+      action_link: `/market/order/delete/${this.id}`
+    }
+  },
+  template: `
+    <tr :id="rowid" v-if="gettype===type">
+      <td class="location">[[ order_location ]]</td>
+      <td class="item_img"><img class="thumbnail" :src="item_img_src" :alt="item_id"/></td>
+      <td class="item_id">[[ item_name ]]</td>
+      <td class="price">[[ price ]]</td>
+      <td class="amount">[[ amount ]]</td>
+      <td>
+        <form method="POST" :action="action_link">
+          {% csrf_token %}<input class="btn btn-outline-danger" type="submit" value="Hủy">
+        </form>
+      </td>
+    </tr>
+    `
+});
+
+</script>
+
+<script type="text/javascript">
+  const api = 'https://gist.githubusercontent.com/deathvn/d9aeac05ea26bfd12688bfca3581be8b/raw/ffe34a985b6612f436946ea54e5b85011840b9ec/albion-item.json';
+  const AlbionItems = [];
+  fetch(api).then(res => res.json()).then(x => AlbionItems.push(...x));
+  const data = {
+    imgAPI: 'https://render.albiononline.com/v1/item/',
+    AlbionItems: AlbionItems
+  }
+
+  var pageHome = new Vue({
+    el : '#ListOfOrder',
+    components: ['row-item', 'table-colgroup', 'table-title'],
+    delimiters: ['[[', ']]'],
+    data: data,
+    methods : {},
+    computed: {
+      isLoaded() {
+        return (data.AlbionItems.length !== 0)
+      }
+    }
+  });
+</script>
+
+{% else %}
+  <p class='text-muted'>
+    Tài khoản này chưa đặt lệnh Mua/Bán nào
+    <span style="white-space: nowrap;">ヘ(￣ω￣ヘ)</span>
+  </p>
+{% endif %}
+
+{% endblock %}

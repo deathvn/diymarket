@@ -1,0 +1,28 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+<p>
+  Trang web được phát triển không chính thức bởi <i>glsu</i><br/>
+  Albion Online không tham gia và chịu trách nhiệm vào bất cứ thành phần nào của web<br/>
+  <i>Sản phẩm này không phải là thuốc, không có tác dụng thay thế thuốc chữa bệnh.</i>
+</p>
+
+<div>
+  <h2>Thống kê</h2>
+  <ul>
+    <li>Tổng số lệnh bán: {{num_sell_orders}}</li>
+    <li>Tổng số lệnh mua: {{num_buy_orders}}</li>
+    <li>Số người dùng hiện tại: {{num_users}}</li>
+  </ul>
+  <h3>Cụ thể từng khu vực</h3>
+  <div class="city-stats">
+    {% for loc, values in LocationDetail.items %}
+    <h4>{{ loc }}</h4>
+    <ul>
+      <li># Bán: {{values.num_sell_orders}}</li>
+      <li># Mua: {{values.num_buy_orders}}</li>
+    </ul>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,238 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+<div id="Container">
+<h2>Bạn muốn:
+  <select v-model="orderType" @click.self="resetSearch()">
+    <!-- This field is opposite with order-create -->
+    <option disabled value="">---</option>
+    <option value="s">Mua</option>
+    <option value="b">Bán</option>
+  </select>
+  Ở:
+  <select v-model="location" @click.self="resetSearch()">
+    <option disabled value="">---</option>
+    <option value="0">Thetford</option>
+    <option value="1">Martlock</option>
+    <option value="2">Bridgewatch</option>
+    <option value="3">Lymhurst</option>
+    <option value="4">Fort Sterling</option>
+    <option value="5">Caerleon</option>
+  </select>
+</h2>
+<button
+  class="btn btn-outline-info"
+  id="comfirm-button"
+  @click="getOrderItems(orderType, location); showItemsList=true"
+  v-show='!isDisabled'
+>
+  Tìm kiếm
+</button>
+
+<input
+  v-model="searchName"
+  @keyup="displayMatch(searchName)"
+  type="text"
+  class="text-input"
+  placeholder="Nhập tên item ở đây để lọc kết quả"
+  v-show="showItemsList"
+>
+
+<p class="item-infor" v-show="showItemsList && matchItems.length===0">
+  Không tìm thấy item
+  <span style="white-space: nowrap;">╮(￣ω￣;)╭</span>
+</p>
+
+<table class="table-of-items" style="width: 100%" v-show="showItemsList">
+  <colgroup>
+    <col span="1" style="width: 20%;">
+    <col span="1" style="width: 35%;">
+    <col span="1" style="width: 15%;">
+    <col span="1" style="width: 15%;">
+    <col span="1" style="width: 15%;">
+  </colgroup>
+  <tbody>
+    <tr>
+      <th>Item</th>
+      <th>Tên</th>
+      <th>Giá</th>
+      <th>Số lượng</th>
+      <th>Người
+          <span v-if="orderType=='s'">bán</span>
+          <span v-if="orderType=='b'">mua</span>
+      </th>
+    </tr>
+    <tr 
+      v-for="(item, index) in matchItems"
+      class="item-selector"
+      @click="('{{user.is_authenticated}}' !== 'False') && ('{{user.get_username}}' !== item.username) && select(item)"
+    >
+      <td><img class="thumbnail" :src="imgAPI + item.id" :alt="item.id"/></td>
+      <td>[[item.name]]</td>
+      <td>[[item.price]]</td>
+      <td>[[item.amount]]</td>
+      <td>[[item.username]]</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- for modal new answer -->
+<modal name="model-trade" width="852" height="auto">
+  <div class="modal__answer">
+    <div class="modal__header">
+      <p>XÁC NHẬN GIAO DỊCH</p>
+    </div>
+    <div class="modal__body">
+      <table class="table-of-items" v-show="showItemsList">
+        <colgroup>
+          <col span="1" style="width: 20%;">
+          <col span="1" style="width: 35%;">
+          <col span="1" style="width: 15%;">
+          <col span="1" style="width: 15%;">
+          <col span="1" style="width: 15%;">
+        </colgroup>
+        <tbody>
+          <tr>
+            <th>Item</th>
+            <th>Tên</th>
+            <th>Giá</th>
+            <th>Số lượng</th>
+            <th>Người
+                <span v-if="orderType=='s'">bán</span>
+                <span v-if="orderType=='b'">mua</span>
+            </th>
+          </tr>
+          <tr>
+            <td><img class="thumbnail" :src="imgAPI + selectedItem.id" :alt="selectedItem.id"/></td>
+            <td>[[selectedItem.name]]</td>
+            <td>[[selectedItem.price]]</td>
+            <td>[[selectedItem.amount]]</td>
+            <td>[[selectedItem.username]]</td>
+          </tr>
+        </tbody>
+      </table>
+      <input
+        v-model="trade_amount"
+        type="number"
+        oninput="javascript: if (this.value > data.selectedItem.amount) this.value = data.selectedItem.amount;"
+        class="text-input"
+        :placeholder="(orderType=='b') ? 'Nhập số lượng cần Bán' : 'Nhập số lượng cần Mua'"
+      />
+      <p>Tổng cộng: [[ total ]]</p>
+    </div>
+    <div class="modal__footer ans__buttons">
+      <button class="btn btn-secondary" @click="doCancel">Cancel</button>
+      <button class="btn btn-primary" @click="doSubmit" :disabled="(!trade_amount) || (trade_amount==0)">Submit</button>
+    </div>
+  </div>
+</modal>
+</div>
+
+<script type="text/javascript">
+  Vue.use(window["vue-js-modal"].default);
+  const data = {
+    imgAPI: 'https://render.albiononline.com/v1/item/',
+    searchName: '',
+    orderType: '',
+    location: '',
+    showItemsList: false,
+    items: [],
+    matchItems: [],
+    selectedItem: {},
+    trade_amount: '',
+  };
+  const api = 'https://gist.githubusercontent.com/deathvn/d9aeac05ea26bfd12688bfca3581be8b/raw/ffe34a985b6612f436946ea54e5b85011840b9ec/albion-item.json';
+  const AlbionItems = [];
+  fetch(api).then(res => res.json()).then(x => AlbionItems.push(...x));
+
+  function itemIdToName(item_id) {
+    return AlbionItems.find(el => el.UniqueName === item_id)['LocalizedNames'];
+  }
+
+  var pageHome = new Vue({
+    el : '#Container',
+    delimiters: ['[[', ']]'],
+    data: data,
+    methods : {
+      resetSearch() {
+        data.showItemsList = false;
+        data.items = [];
+        data.matchItems = [];
+      },
+      find(word) {
+        // const reg = new RegExp(word, 'gi');
+        // return data.items.filter(el => reg.test(el.name));
+        // Use new string matcher
+        const pattern = word.toLowerCase();
+        return data.items.filter(el => el.name.toLowerCase().includes(pattern));
+      },
+      async getOrderItems(type, loc) {
+        const response = await $.ajax({
+          url : '/market/order/get', 
+          type : 'GET',
+          data : {
+            type: type,
+            location: loc
+          }
+        });
+        if (response.status === "success") {
+          const arrayItem = response.result;
+          arrayItem.forEach(function(el) {
+            const itemDict = {
+              uid: el.id,
+              id: el.item_id,
+              name: itemIdToName(el.item_id),
+              price: el.price,
+              amount: el.amount,
+              username: el.username_id
+            }
+            if (itemDict.amount > 0) {
+              data.items.push(itemDict);
+              data.matchItems.push(itemDict);
+            }
+          });
+        }
+      },
+      displayMatch(phrase) {
+        data.matchItems = this.find(phrase);
+      },
+      select(item) {
+        data.selectedItem = item;
+        this.$modal.show('model-trade');
+      },
+      doCancel() {
+        this.$modal.hide('model-trade');
+        data.trade_amount = '';
+      },
+      async doSubmit() {
+        // POST submit Answer
+        const payload = {
+          order: data.selectedItem.uid,
+          amount: data.trade_amount
+        };
+        const response = await $.ajax({
+          url : "/market/matching/create/", 
+          type : "POST", 
+          data : payload,
+        });        
+        this.$modal.hide('model-trade');
+        data.trade_amount = '';
+        location.reload();
+      }
+    },
+    computed: {
+      isDisabled() {
+        return (data.orderType === '' || data.location === '' || data.showItemsList);
+      },
+      total() {
+        const formatter = new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 0,
+        });
+        return formatter.format(data.selectedItem.price * data.trade_amount);
+      }
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,188 @@
+{% extends "base_generic.html" %} {% block content %}
+<form action="" method="post">
+  {% csrf_token %}
+  <table id="TableForm" style="width: 80%;">
+    <tbody>
+      <tr>
+        <th><label for="id_type">Bạn muốn:</label></th>
+        <td>
+          <select name="type" required="" id="id_type" class="dropdown">
+            <option value="" selected="">---------</option>
+            <option value="b">Mua</option>
+            <option value="s">Bán</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <th><label for="id_location">Ở:</label></th>
+        <td>
+          <select name="location" id="id_location" class="dropdown">
+            <option value="0">Thetford</option>
+            <option value="1">Martlock</option>
+            <option value="2">Bridgewatch</option>
+            <option value="3" selected="">Lymhurst</option>
+            <option value="4">Fort Sterling</option>
+            <option value="5">Caerleon</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <th><label for="id_item_id">Tên item:</label></th>
+        <td>
+          <input
+            class="text-input"
+            type="text"
+            name="itemName"
+            v-model="itemName"
+            placeholder="Nhập tên item (tối thiểu 3 kí tự)"
+            @keyup="displayMatch(itemName)"
+            :disabled="itemID!==''"
+          />
+          <input
+            v-show="false"
+            type="text"
+            name="item_id"
+            required=""
+            id="id_item_id"
+            v-model="itemID"
+          />
+      </tr>
+      <tr>
+        <th></th>
+        <td>
+          <table class="table-of-items" style="width: 100%; margin-top: 0;">
+            <colgroup>
+              <col span="1" style="width: 20%;">
+              <col span="1" style="width: 80%;">
+            </colgroup>
+            <tbody>
+              <tr>
+                <th v-if="itemsList.length > maxNumShow">Tier</th>
+                <th v-else>Item</th>
+                <th>Tên</th>
+              </tr>
+              <tr v-for="(item, index) in itemsList" class="item-selector" @click="select(item)">
+                <td v-if="itemsList.length > maxNumShow">[[ uniNameToTier(item.UniqueName) ]]</td>
+                <td v-else><img class="thumbnail" :src="imgAPI + item.UniqueName" :alt="uniNameToTier(item.UniqueName)"/></td>
+                <td>[[ item.LocalizedNames ]]</td>
+              </tr>
+            </tbody>
+          </table>
+        </td>
+      </tr>
+      <tr v-show="doneSelect">
+        <th><label for="id_price">Giá đặt:</label></th>
+        <td>
+          <input
+            class="dropdown"
+            type="number"
+            name="price"
+            value="0"
+            min="0"
+            required=""
+            id="id_price"
+            v-model="price"
+          />
+        </td>
+      </tr>
+      <tr v-show="doneSelect">
+        <th><label for="id_amount">Số lượng:</label></th>
+        <td>
+          <input
+            class="dropdown"
+            type="number"
+            name="amount"
+            value="0"
+            min="0"
+            required=""
+            id="id_amount"
+            v-model="amount"
+          />
+        </td>
+      </tr>
+      <tr v-show="doneSelect">
+        <th>Tổng cộng:</th>
+        <td>[[ total ]]</td>
+      </tr>
+    </tbody>
+  </table>
+  <input class="btn btn-outline-primary submit-button" type="submit" value="Xác nhận" />
+</form>
+
+<script type="text/javascript">
+  const api = 'https://gist.githubusercontent.com/deathvn/d9aeac05ea26bfd12688bfca3581be8b/raw/ffe34a985b6612f436946ea54e5b85011840b9ec/albion-item.json';
+  const AlbionItems = [];
+  fetch(api).then(res => res.json()).then(function(x) {
+    x.forEach(function(el) {
+      if (!el.UniqueName.includes('NONTRADABLE')) {
+        AlbionItems.push(el);
+      }
+    });
+    // AlbionItems.sort((firstEl, secondEl) => (firstEl.UniqueName - secondEl.UniqueName));
+  });
+
+  const data = {
+    imgAPI: 'https://render.albiononline.com/v1/item/',
+    maxNumShow: 8,
+    price: 0,
+    amount: 1,
+    itemName: '',
+    itemID: '',
+    doneSelect: false,
+    itemsList: [],
+  };
+
+  var pageHome = new Vue({
+    el : '#TableForm',
+    delimiters: ['[[', ']]'],
+    data: data,
+    methods : {
+      find(word) {
+        const pattern = word.toLowerCase();
+        const result = AlbionItems.filter(function(x) {
+          const has_pattern = x.LocalizedNames.toLowerCase().includes(pattern);
+          const has_Tier = (x.UniqueName[0] === 'T');
+          return has_pattern && has_Tier;
+        });
+        return result;
+      },
+      displayMatch(phrase) {
+        if (phrase.length >= 3) {
+          const matchPlace = this.find(phrase);
+          data.itemsList = matchPlace;
+        } else {
+          data.itemsList = [];
+        }
+      },
+      uniNameToTier(uniName) {
+        let enchantment;
+        if (uniName.includes('@')) {
+          enchantment = uniName.split('@').pop();
+        } else {
+          enchantment = '0';
+        }
+        const tier = uniName.substring(1, 2);
+        return (tier === 'R') ? tier : `${tier}.${enchantment}`;
+      },
+      select(item) {
+        data.itemsList = [item];
+        data.itemID = item.UniqueName;
+        data.doneSelect = true;
+      },
+    },
+    computed: {
+      total() {
+        const formatter = new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 0,
+          // These options are needed to round to whole numbers if that's what you want.
+          //minimumFractionDigits: 0, // (this suffices for whole numbers, but will print 2500.10 as $2,500.1)
+          //maximumFractionDigits: 0, // (causes 2500.99 to be printed as $2,501)
+        });
+        return formatter.format(data.price*data.amount);
+      }
+    }
+  });
+</script>
+{% endblock %}

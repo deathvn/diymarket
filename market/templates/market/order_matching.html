@@ -1,0 +1,189 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+<h1>{{ username }}</h1>
+<p>Danh sách các lệnh
+  {% if trader_type == 'mua' %}
+    bán
+  {% else %}
+    mua
+  {% endif %}
+  đã khớp của bạn. Vui lòng liên hệ trong game để trade.
+  <ul>
+    <li>Bấm <strong>Hoàn thành</strong> để xác nhận trade thành công.</li>
+    <li>Bấm <strong>Hủy</strong> để hủy bỏ giao dịch hoặc trade thất bại.</li>
+  </ul>
+</p>
+
+<div id="ListOfOrder" v-if="isLoaded">
+  <table class="table-of-items" style="width: 100%">
+    <colgroup is="table-colgroup"></colgroup>
+    <tbody>
+      <tr>
+        <th>Vị trí</th>
+        <th>Item</th>
+        <th>Tên</th>
+        <th>Giá</th>
+        <th>Số lượng</th>
+        <th>Người {{ trader_type }}</th>
+      </tr>
+      {% for match in ordermatching_list %}
+      <tr is="row-item"
+        trader_type="{{trader_type}}"
+        id="{{ match.id }}"
+        rowid="match-{{ forloop.counter0 }}"
+        type="{{ match.order.type }}"
+        location="{{ match.order.location }}"
+        item_id="{{ match.order.item_id }}"
+        price="{{ match.order.price }}"
+        amount="{{ match.amount }}"
+        user={% if match.order.username|stringformat:"s" == username %}"{{ match.username }}"{% else %}"{{ match.order.username }}"{% endif %}
+        ismyorder={% if match.order.username|stringformat:"s" == username %}"True"{% else %}"False"{% endif %}
+      ></tr>
+      [[ calc_silver(
+          {% if match.order.username|stringformat:"s" == username %}"{{ match.username }}"{% else %}"{{ match.order.username }}"{% endif %},
+          "{{match.order.price}}",
+          "{{match.amount}}",
+          "{{trader_type}}", "{{ match.order.type }}",
+          {% if match.order.username|stringformat:"s" == username %}"True"{% else %}"False"{% endif %}) ]]
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>
+    {% if trader_type == 'mua' %}
+      Bạn sẽ nhận được từ
+    {% else %}
+      Bạn cần phải trả cho
+    {% endif %}
+  </h2>
+  <ul v-show="(silver_dict_key.length !== 0)">
+    <li v-for="key in silver_dict_key">
+      [[ key ]]: [[ get_silver_dict_value(key) ]]
+    </li>
+  </ul>
+</div>
+
+<script type="text/javascript">
+  function itemIdToName(item_id) {
+    return data.AlbionItems.find(el => el.UniqueName === item_id)['LocalizedNames'];
+  }
+  
+  const TYPE_CHOICE = {
+    'b': 'Buy',
+    's': 'Sell'
+  };
+  const LOCATION_CHOICE = {
+    '0': 'Thetford',
+    '1': 'Martlock',
+    '2': 'Bridgewatch',
+    '3': 'Lymhurst',
+    '4': 'Fort Sterling',
+    '5': 'Caerleon'
+  };
+  
+  Vue.component('table-colgroup', {
+    template: `
+      <colgroup>
+        <col span="1" style="width: 15%;">
+        <col span="1" style="width: 15%;">
+        <col span="1" style="width: 40%;">
+        <col span="1" style="width: 15%;">
+        <col span="1" style="width: 10%;">
+        <col span="1" style="width: 5%;">
+      </colgroup>
+    `
+  });
+  
+  Vue.component('row-item', {
+    delimiters: ['[[', ']]'],
+    props: ["rowid", "type", "location", "item_id", "price", "amount", "user", "id", "ismyorder", "trader_type"],
+    data: function () {
+      const traderType = this.trader_type=='mua' ? 'b' : 's';
+      const sameTradeType = this.type==traderType;
+      const isMyOrder = Boolean(this.ismyorder=='False');
+      const is_show = isMyOrder ^ !sameTradeType;
+      const enTraderType = traderType=='mua'? 'sell' : 'buy';
+      return {
+        order_type: TYPE_CHOICE[this.type],
+        order_location: LOCATION_CHOICE[this.location],
+        item_img_src: `${data.imgAPI}${this.item_id}`,
+        item_name: itemIdToName(this.item_id),
+        action_link: `/market/matching/delete/${enTraderType}/${this.id}/`,
+        is_show: is_show
+      }
+    },
+    template: `
+      <tr :id="rowid" v-show="is_show">
+        <td class="location">[[ order_location ]]</td>
+        <td class="item_img"><img class="thumbnail" :src="item_img_src" :alt="item_id"/></td>
+        <td class="item_id">[[ item_name ]]</td>
+        <td class="price">[[ price ]]</td>
+        <td class="amount">[[ amount ]]</td>
+        <td class="amount">[[ user ]]</td>
+        <td>
+          <form method="POST" :action="action_link + 'cancel'">
+            {% csrf_token %}<input class="btn btn-outline-success" type="submit" value="Hoàn thành">
+          </form>
+        </td>
+        <td>
+          <form method="POST" :action="action_link + 'cancel'">
+            {% csrf_token %}<input class="btn btn-outline-danger" type="submit" value="Hủy">
+          </form>
+        </td>
+      </tr>
+      `
+  });
+  
+</script>
+
+<script type="text/javascript">
+  const api = 'https://gist.githubusercontent.com/deathvn/d9aeac05ea26bfd12688bfca3581be8b/raw/ffe34a985b6612f436946ea54e5b85011840b9ec/albion-item.json';
+  const AlbionItems = [];
+  fetch(api).then(res => res.json()).then(x => AlbionItems.push(...x));
+  const data = {
+    imgAPI: '',//'https://render.albiononline.com/v1/item/',
+    AlbionItems: AlbionItems,
+    silver: {}
+  }
+
+  var pageHome = new Vue({
+    el : '#ListOfOrder',
+    components: ['row-item', 'table-colgroup'],
+    delimiters: ['[[', ']]'],
+    data: data,
+    methods : {
+      get_silver_dict_value(key) {
+        const formatter = new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 0,
+        });
+        return formatter.format(data.silver[key]);
+      },
+      calc_silver(username, price, amount, trader_type, type, ismyorder) {
+        const traderType = trader_type=='mua' ? 'b' : 's';
+        const sameTradeType = (type==traderType);
+        const isMyOrder = Boolean(ismyorder=='False');
+        const is_show = isMyOrder ^ !sameTradeType;
+        if (is_show) {
+          if (data.silver[username] === undefined) {
+            data.silver[username] = 0;
+          }
+          data.silver[username] += price*amount;
+        }
+      }
+    },
+    computed: {
+      isLoaded() {
+        return (data.AlbionItems.length !== 0)
+      },
+      silver_dict_key() {
+        keys = Object.keys(data.silver);
+        return keys;
+      }
+    }
+  });
+</script>
+
+{% endblock %}
