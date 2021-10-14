@@ -23,6 +23,7 @@
         <th>Vị trí</th>
         <th>Item</th>
         <th>Tên</th>
+        <th>Chất lượng</th>
         <th>Giá</th>
         <th>Số lượng</th>
         <th>Người {{ trader_type }}</th>
@@ -35,6 +36,7 @@
         type="{{ match.order.type }}"
         location="{{ match.order.location }}"
         item_id="{{ match.order.item_id }}"
+        quality="{{ match.order.quality }}"
         price="{{ match.order.price }}"
         amount="{{ match.amount }}"
         user={% if match.order.username|stringformat:"s" == username %}"{{ match.username }}"{% else %}"{{ match.order.username }}"{% endif %}
@@ -81,13 +83,21 @@
     '4': 'Fort Sterling',
     '5': 'Caerleon'
   };
+  const QUALITY_CHOICE = {
+    '0': 'Normal',
+    '1': 'Good',
+    '2': 'Outstanding',
+    '3': 'Excellent',
+    '4': 'Masterpiece'
+  };
   
   Vue.component('table-colgroup', {
     template: `
       <colgroup>
         <col span="1" style="width: 15%;">
         <col span="1" style="width: 15%;">
-        <col span="1" style="width: 40%;">
+        <col span="1" style="width: 30%;">
+        <col span="1" style="width: 10%;">
         <col span="1" style="width: 15%;">
         <col span="1" style="width: 10%;">
         <col span="1" style="width: 5%;">
@@ -97,7 +107,7 @@
   
   Vue.component('row-item', {
     delimiters: ['[[', ']]'],
-    props: ["rowid", "type", "location", "item_id", "price", "amount", "user", "id", "ismyorder", "trader_type"],
+    props: ["rowid", "type", "location", "item_id", "quality", "price", "amount", "user", "id", "ismyorder", "trader_type"],
     data: function () {
       const traderType = this.trader_type=='mua' ? 'b' : 's';
       const sameTradeType = this.type==traderType;
@@ -118,6 +128,7 @@
         <td class="location">[[ order_location ]]</td>
         <td class="item_img"><img class="thumbnail" :src="item_img_src" :alt="item_id"/></td>
         <td class="item_id">[[ item_name ]]</td>
+        <td class="item_id">[[ QUALITY_CHOICE[quality] ]]</td>
         <td class="price">[[ price ]]</td>
         <td class="amount">[[ amount ]]</td>
         <td class="amount">[[ user ]]</td>
@@ -142,7 +153,7 @@
   const AlbionItems = [];
   fetch(api).then(res => res.json()).then(x => AlbionItems.push(...x));
   const data = {
-    imgAPI: '',//'https://render.albiononline.com/v1/item/',
+    imgAPI: 'https://render.albiononline.com/v1/item/',
     AlbionItems: AlbionItems,
     silver: {}
   }

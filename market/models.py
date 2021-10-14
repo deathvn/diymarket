@@ -21,6 +21,12 @@ class Order(models.Model):
         help_text='Enter the location of order'
     )
     item_id = models.CharField(max_length=100, help_text='Enter the UniqueName of item')
+    quality = models.CharField(
+        max_length=1,
+        choices=settings.QUALITY_CHOICE,
+        default='0',
+        help_text='Enter the quality of item'
+    )
     price = models.PositiveIntegerField(default=0, help_text='Price of item')
     amount = models.PositiveIntegerField(default=0, help_text='Number of item')
     username = models.ForeignKey(User, to_field="username", on_delete=models.SET_NULL, null=True)

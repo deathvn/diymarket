@@ -45,8 +45,9 @@
 
 <table class="table-of-items" style="width: 100%" v-show="showItemsList">
   <colgroup>
-    <col span="1" style="width: 20%;">
-    <col span="1" style="width: 35%;">
+    <col span="1" style="width: 15%;">
+    <col span="1" style="width: 30%;">
+    <col span="1" style="width: 10%;">
     <col span="1" style="width: 15%;">
     <col span="1" style="width: 15%;">
     <col span="1" style="width: 15%;">
@@ -55,6 +56,7 @@
     <tr>
       <th>Item</th>
       <th>Tên</th>
+      <th>Chất lượng</th>
       <th>Giá</th>
       <th>Số lượng</th>
       <th>Người
@@ -69,6 +71,7 @@
     >
       <td><img class="thumbnail" :src="imgAPI + item.id" :alt="item.id"/></td>
       <td>[[item.name]]</td>
+      <td>[[item.quality]]</td>
       <td>[[item.price]]</td>
       <td>[[item.amount]]</td>
       <td>[[item.username]]</td>
@@ -85,8 +88,9 @@
     <div class="modal__body">
       <table class="table-of-items" v-show="showItemsList">
         <colgroup>
-          <col span="1" style="width: 20%;">
-          <col span="1" style="width: 35%;">
+          <col span="1" style="width: 15%;">
+          <col span="1" style="width: 30%;">
+          <col span="1" style="width: 10%;">
           <col span="1" style="width: 15%;">
           <col span="1" style="width: 15%;">
           <col span="1" style="width: 15%;">
@@ -95,6 +99,7 @@
           <tr>
             <th>Item</th>
             <th>Tên</th>
+            <th>Chất lượng</th>
             <th>Giá</th>
             <th>Số lượng</th>
             <th>Người
@@ -105,6 +110,7 @@
           <tr>
             <td><img class="thumbnail" :src="imgAPI + selectedItem.id" :alt="selectedItem.id"/></td>
             <td>[[selectedItem.name]]</td>
+            <td>[[selectedItem.quality]]</td>
             <td>[[selectedItem.price]]</td>
             <td>[[selectedItem.amount]]</td>
             <td>[[selectedItem.username]]</td>
@@ -149,6 +155,14 @@
     return AlbionItems.find(el => el.UniqueName === item_id)['LocalizedNames'];
   }
 
+  const QUALITY_CHOICE = {
+    '0': 'Normal',
+    '1': 'Good',
+    '2': 'Outstanding',
+    '3': 'Excellent',
+    '4': 'Masterpiece'
+  }
+
   var pageHome = new Vue({
     el : '#Container',
     delimiters: ['[[', ']]'],
@@ -182,6 +196,7 @@
               uid: el.id,
               id: el.item_id,
               name: itemIdToName(el.item_id),
+              quality: QUALITY_CHOICE[el.quality],
               price: el.price,
               amount: el.amount,
               username: el.username_id

@@ -144,6 +144,14 @@ STATUS_CHOICE = (
     ('2', 'Cancel'),
 )
 
+QUALITY_CHOICE = (
+    ('0', 'Normal'),
+    ('1', 'Good'),
+    ('2', 'Outstanding'),
+    ('3', 'Excellent'),
+    ('4', 'Masterpiece')
+)
+
 # Heroku: Update database configuration from $DATABASE_URL.
 import dj_database_url
 db_from_env = dj_database_url.config(conn_max_age=500)

@@ -24,6 +24,7 @@
         type="{{ order.type }}"
         location="{{ order.location }}"
         item_id="{{ order.item_id }}"
+        quality="{{ order.quality }}"
         price="{{ order.price }}"
         amount="{{ order.amount }}"
       ></tr>
@@ -45,6 +46,7 @@
         type="{{ order.type }}"
         location="{{ order.location }}"
         item_id="{{ order.item_id }}"
+        quality="{{ order.quality }}"
         price="{{ order.price }}"
         amount="{{ order.amount }}"
       ></tr>
@@ -76,7 +78,8 @@ Vue.component('table-colgroup', {
     <colgroup>
       <col span="1" style="width: 15%;">
       <col span="1" style="width: 15%;">
-      <col span="1" style="width: 40%;">
+      <col span="1" style="width: 30%;">
+      <col span="1" style="width: 10%;">
       <col span="1" style="width: 15%;">
       <col span="1" style="width: 10%;">
       <col span="1" style="width: 5%;">
@@ -90,6 +93,7 @@ Vue.component('table-title', {
       <th>Vị trí</th>
       <th>Item</th>
       <th>Tên</th>
+      <th>Chất lượng</th>
       <th>Giá</th>
       <th>Số lượng</th>
     </tr>
@@ -98,7 +102,7 @@ Vue.component('table-title', {
 
 Vue.component('row-item', {
   delimiters: ['[[', ']]'],
-  props: ["gettype", "rowid", "type", "location", "item_id", "price", "amount", "id"],
+  props: ["gettype", "rowid", "type", "location", "item_id", "quality", "price", "amount", "id"],
   data: function () {
     return {
       order_type: TYPE_CHOICE[this.type],
@@ -113,6 +117,7 @@ Vue.component('row-item', {
       <td class="location">[[ order_location ]]</td>
       <td class="item_img"><img class="thumbnail" :src="item_img_src" :alt="item_id"/></td>
       <td class="item_id">[[ item_name ]]</td>
+      <td class="item_id">[[ QUALITY_CHOICE[quality] ]]</td>
       <td class="price">[[ price ]]</td>
       <td class="amount">[[ amount ]]</td>
       <td>
@@ -133,6 +138,14 @@ Vue.component('row-item', {
   const data = {
     imgAPI: 'https://render.albiononline.com/v1/item/',
     AlbionItems: AlbionItems
+  }
+
+  const QUALITY_CHOICE = {
+    '0': 'Normal',
+    '1': 'Good',
+    '2': 'Outstanding',
+    '3': 'Excellent',
+    '4': 'Masterpiece'
   }
 
   var pageHome = new Vue({
