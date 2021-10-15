@@ -47,7 +47,11 @@ def get_orders(request):
 
     if (type and location):
         # Find all object in data
-        result = list(Order.objects.filter(type=type, location=location).values())
+        result = list(
+            Order.objects.filter(
+                type=type, location=location
+            ).order_by('price').values()
+        )
         if result:
             return JsonResponse({
                 "status": "success",

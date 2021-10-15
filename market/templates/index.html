@@ -78,6 +78,7 @@
     </tr>
   </tbody>
 </table>
+<button class="btn btn-info" v-show="pagination" @click="move_step()">Xem trang tiếp theo >></button>
 
 <!-- for modal new answer -->
 <modal name="model-trade" width="852" height="auto">
@@ -144,8 +145,12 @@
     showItemsList: false,
     items: [],
     matchItems: [],
+    findArray: [],
     selectedItem: {},
     trade_amount: '',
+    start_pag: 0,
+    max_row : 6,
+    pagination: false
   };
   const api = 'https://gist.githubusercontent.com/deathvn/d9aeac05ea26bfd12688bfca3581be8b/raw/ffe34a985b6612f436946ea54e5b85011840b9ec/albion-item.json';
   const AlbionItems = [];
@@ -172,6 +177,8 @@
         data.showItemsList = false;
         data.items = [];
         data.matchItems = [];
+        data.findArray = [];
+        data.pagination = false;
       },
       find(word) {
         // const reg = new RegExp(word, 'gi');
@@ -203,13 +210,34 @@
             }
             if (itemDict.amount > 0) {
               data.items.push(itemDict);
-              data.matchItems.push(itemDict);
+              data.findArray.push(itemDict)
+              if (data.matchItems.length < data.max_row) {
+                data.matchItems.push(itemDict);
+                data.pagination = true;
+              }
             }
           });
         }
       },
       displayMatch(phrase) {
-        data.matchItems = this.find(phrase);
+        data.findArray = this.find(phrase);
+        let disPlayFindArray = data.findArray;
+        if (data.findArray.length > data.max_row) {
+          disPlayFindArray = disPlayFindArray.slice(data.start_pag, data.start_pag + data.max_row - 1);
+          data.pagination = true;
+        } else {
+          // disPlayFindArray = data.findArray;
+          data.pagination = false;
+        }
+        data.matchItems = disPlayFindArray;
+      },
+      move_step() {
+        data.start_pag += data.max_row;
+        data.matchItems = data.findArray.slice(data.start_pag, data.start_pag + data.max_row);
+        const end = data.start_pag + data.max_row;
+        if (end >= data.findArray.length) {
+          data.pagination = false;
+        }
       },
       select(item) {
         data.selectedItem = item;
