@@ -78,7 +78,7 @@
     </tr>
   </tbody>
 </table>
-<button class="btn btn-info" v-show="pagination" @click="move_step()">Xem trang tiếp theo >></button>
+<button class="btn btn-info" v-show="false" @click="move_step()">Xem trang tiếp theo >></button>
 
 <!-- for modal new answer -->
 <modal name="model-trade" width="852" height="auto">
@@ -149,7 +149,7 @@
     selectedItem: {},
     trade_amount: '',
     start_pag: 0,
-    max_row : 6,
+    max_row : 10,
     pagination: false
   };
   const api = 'https://gist.githubusercontent.com/deathvn/d9aeac05ea26bfd12688bfca3581be8b/raw/ffe34a985b6612f436946ea54e5b85011840b9ec/albion-item.json';
